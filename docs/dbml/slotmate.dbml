@@ -1,0 +1,39 @@
+Project SlotMate {
+  database_type: 'PostgreSQL'
+  Note: '學生預約系統，單一管理者模式'
+}
+
+Table users {
+  id integer [pk, increment]
+  student_id varchar(20) [unique, not null, note: '學號 (作為 username)']
+  first_name varchar(50) [note: '名)']
+  last_name varchar(50) [note: '姓']
+  department varchar(50) [note: '系級']
+  grade integer [note: '年級']
+  email varchar(255)
+  is_staff boolean [default: false, note: '是否為管理者']
+  is_active boolean [default: true]
+  date_joined timestamp
+}
+
+Table allowed_students {
+  id integer [pk, increment]
+  student_id varchar(20) [unique, not null, note: '允許註冊的學號']
+  full_name varchar(100) [note: '學生全名，用來核對身分']
+  
+  Note: '註冊時系統會檢查輸入的學號是否存在於此表'
+}
+
+Table appointments {
+  id integer [pk, increment]
+  user_id integer [ref: > users.id, note: '預約的學生']
+  start_time datetime [not null, note: '預約開始時間']
+  end_time datetime [not null, note: '預約結束時間 (start + 30m * N)']
+  status varchar(20) [default: 'confirmed', note: 'reserved, confirmed, cancelled']
+  memo text [null, note: '預約備註/問題回答']
+  
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+
+  Note: '單筆預約 end_time - start_time <= 2小時'
+}
