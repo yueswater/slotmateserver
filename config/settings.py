@@ -38,7 +38,12 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-local-dev-key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'slotmate-api.onrender.com',
+    '.yueswater.com'
+]
 
 # Custom user model
 AUTH_USER_MODEL = "users.User"
