@@ -42,7 +42,8 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     'slotmate-api.onrender.com',
-    '.yueswater.com'
+    '.yueswater.com',
+    'slotmate.yueswater.com',
 ]
 
 # Custom user model
