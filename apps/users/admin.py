@@ -75,6 +75,7 @@ class StudentImportAdmin(admin.ModelAdmin):
                 student_id = row.get('student_id', '').strip().upper()
                 name = row.get('name', '').strip()
                 email = row.get('email', '').strip()
+                grade = row.get('grade', '1').strip()
 
                 if not student_id:
                     continue
@@ -85,6 +86,7 @@ class StudentImportAdmin(admin.ModelAdmin):
                     defaults={
                         'first_name': name,
                         'email': email,
+                        'grade': grade,
                         'is_active': True,
                     }
                 )
