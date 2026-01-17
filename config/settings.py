@@ -84,6 +84,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://www.yueswater.com",
     "http://localhost:5173",
     "http://localhost:3000",
+    "https://slotmate.yueswater.com",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -91,8 +92,8 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.yueswater.com",
     "https://api.yueswater.com",
     "https://slotmate-api.onrender.com",
+    "https://slotmate.yueswater.com",
 ]
-
 ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
