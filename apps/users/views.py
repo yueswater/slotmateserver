@@ -8,7 +8,7 @@ from django.core.cache import cache
 from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
-from notify_letter.utils import send_password_reset_email
+from notify_letter.utils import send_password_reset_email, send_password_reset_confirmation_email
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -192,7 +192,25 @@ class PasswordResetConfirmView(APIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save()
+            
+            frontend_url = getattr(
+                settings, "FRONTEND_URL", "https://slotmate.yueswater.com"
+            )
+            
+            try:
+                send_password_reset_confirmation_email(
+                    user.email,
+                    {
+                        "user": user,
+                        "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "login_url": f"{frontend_url}/login",
+                        "year": datetime.datetime.now().year,
+                    }
+                )
+            except Exception as e:
+                print(f"SMTP Confirmation Error: {e}")
+
             return Response(
                 {"message": "Password has been reset successfully."},
                 status=status.HTTP_200_OK,

@@ -59,3 +59,12 @@ def send_password_reset_email(recipient_email, context):
         context=context,
         template_name="emails/password_reset.html",
     )
+
+def send_password_reset_confirmation_email(recipient_email, context):
+    subject = "[SlotMate] Password Reset Successful"
+    return _send_email_core(
+        recipient_email=recipient_email,
+        subject=subject,
+        context=context,
+        template_name="emails/password_reset_confirmation.html",
+    )
