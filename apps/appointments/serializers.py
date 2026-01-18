@@ -24,7 +24,14 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "student_email",
             "created_at",
         ]
-        read_only_fields = ["id", "status", "created_at", "student_id", "student_name", "student_email"]
+        read_only_fields = [
+            "id",
+            "status",
+            "created_at",
+            "student_id",
+            "student_name",
+            "student_email",
+        ]
 
 
 class CreateAppointmentSerializer(serializers.Serializer):

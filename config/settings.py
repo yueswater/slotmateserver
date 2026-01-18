@@ -14,8 +14,8 @@ import os
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
 import dj_database_url
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,18 +33,21 @@ from .smtp_settings import *  # noqa
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-local-dev-key')
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-local-dev-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'slotmate-api.onrender.com',
-    '.yueswater.com',
-    'slotmate.yueswater.com',
+    "localhost",
+    "127.0.0.1",
+    "slotmate-api.onrender.com",
+    ".yueswater.com",
+    "slotmate.yueswater.com",
 ]
+
+# Frontend URL
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 
 # Custom user model
 AUTH_USER_MODEL = "users.User"
@@ -82,6 +85,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "https://yueswater.com",
     "https://www.yueswater.com",
+    FRONTEND_URL,
     "http://localhost:5173",
     "http://localhost:3000",
     "https://slotmate.yueswater.com",
@@ -91,6 +95,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://yueswater.com",
     "https://www.yueswater.com",
     "https://api.yueswater.com",
+    FRONTEND_URL,
     "https://slotmate-api.onrender.com",
     "https://slotmate.yueswater.com",
 ]
@@ -118,9 +123,8 @@ WSGI_APPLICATION = "config.wsgi.application"
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=600
+    "default": dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}', conn_max_age=600
     )
 }
 
@@ -160,8 +164,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Rest Framework & JWT Settings
 # https://docs.djangoproject.com/en/6.0/ref/settings/#rest-framework

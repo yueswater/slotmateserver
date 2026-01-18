@@ -7,8 +7,10 @@ from users.views import (
     ActivateAccountView,
     ChangePasswordView,
     CheckStudentView,
+    ForgotPasswordView,
     LogoutView,
     MyTokenObtainPairView,
+    PasswordResetConfirmView,
     ProfileView,
 )
 
@@ -29,6 +31,16 @@ urlpatterns = [
     ),
     path("api/auth/check-student/", CheckStudentView.as_view(), name="check_student"),
     path("api/auth/activate/", ActivateAccountView.as_view(), name="activate"),
+    path(
+        "api/auth/forgot-password/",
+        ForgotPasswordView.as_view(),
+        name="forgot_password",
+    ),
+    path(
+        "api/auth/reset-password/",
+        PasswordResetConfirmView.as_view(),
+        name="reset_password_confirm",
+    ),
     # Slots Availability
     path("api/slots/", AvailableSlotsView.as_view(), name="slots_availability"),
     # Appointments

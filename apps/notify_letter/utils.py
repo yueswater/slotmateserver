@@ -1,7 +1,10 @@
+import datetime
+
 from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+
 
 def _send_email_core(recipient_email, subject, context, template_name):
     try:
@@ -21,23 +24,38 @@ def _send_email_core(recipient_email, subject, context, template_name):
         print(f"SMTP_ERROR: {str(e)}")
         return False
 
-def send_notification_email(recipient_email, subject, context, template_name="emails/appointment_confirmed.html"):
+
+def send_notification_email(
+    recipient_email, subject, context, template_name="emails/appointment_confirmed.html"
+):
     return _send_email_core(recipient_email, subject, context, template_name)
+
 
 def send_confirmation_email(recipient_email, context):
     subject = f"[SlotMate] Appointment Confirmed - {context.get('date')}"
     return _send_email_core(
-        recipient_email, 
-        subject, 
-        context, 
-        template_name="emails/appointment_confirmed.html"
+        recipient_email,
+        subject,
+        context,
+        template_name="emails/appointment_confirmed.html",
     )
+
 
 def send_rejection_email(recipient_email, context):
     subject = f"[SlotMate] Appointment Status Update - {context.get('date')}"
     return _send_email_core(
-        recipient_email, 
-        subject, 
-        context, 
-        template_name="emails/appointment_rejected.html"
+        recipient_email,
+        subject,
+        context,
+        template_name="emails/appointment_rejected.html",
+    )
+
+
+def send_password_reset_email(recipient_email, context):
+    subject = "[SlotMate] Password Reset Request"
+    return _send_email_core(
+        recipient_email=recipient_email,
+        subject=subject,
+        context=context,
+        template_name="emails/password_reset.html",
     )

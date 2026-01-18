@@ -1,6 +1,10 @@
 import re
 
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
+from django.core.cache import cache
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from users.validator import PasswordStrengthValidator
@@ -42,7 +46,6 @@ class ChangePasswordSerializer(serializers.Serializer):
         confirm_pwd = data.get("confirm_password")
         print(new_pwd, confirm_pwd)
 
-        # Basic consistency check
         if new_pwd != confirm_pwd:
             raise serializers.ValidationError(
                 {"confirm_password": "New passwords do not match."}
@@ -62,10 +65,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ["student_id", "email", "first_name", "last_name", "password"]
 
     def validate_student_id(self, value):
-        # 檢查學號是否已註冊
+
         if User.objects.filter(student_id=value).exists():
             raise serializers.ValidationError("此學號已註冊")
-        # 檢查學號是否在允許註冊名單中
+
         if not AllowedStudent.objects.filter(student_id=value).exists():
             raise serializers.ValidationError("此學號不在允許註冊名單中，請聯繫老師")
         return value
@@ -145,4 +148,67 @@ class ActivateAccountSerializer(serializers.Serializer):
         user.is_first_login = False
         user.is_active = True
         user.save()
+        return user
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    student_id = serializers.CharField(max_length=20)
+
+    def validate_student_id(self, value):
+        student_id = value.strip().upper()
+        if not User.objects.filter(student_id=student_id).exists():
+            raise serializers.ValidationError("Student ID not found.")
+        return student_id
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uidb64 = serializers.CharField()
+    token = serializers.CharField(required=False, allow_blank=True)
+    otp = serializers.CharField(required=False, allow_blank=True)
+    new_password = serializers.CharField(min_length=6, write_only=True)
+
+    def validate(self, attrs):
+        uidb64 = attrs.get("uidb64")
+        token = attrs.get("token")
+        otp = attrs.get("otp")
+        password = attrs.get("new_password")
+
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            raise serializers.ValidationError({"uid": "Invalid user ID."})
+
+        is_token_valid = False
+        is_otp_valid = False
+
+        if token:
+            if default_token_generator.check_token(user, token):
+                is_token_valid = True
+
+        if otp and not is_token_valid:
+
+            cache_key = f"password_reset_otp_{user.id}"
+            cached_otp = cache.get(cache_key)
+            if cached_otp and str(cached_otp) == str(otp):
+                is_otp_valid = True
+
+        if not is_token_valid and not is_otp_valid:
+            raise serializers.ValidationError(
+                {"error": "Invalid or expired token/OTP."}
+            )
+
+        attrs["user"] = user
+        return attrs
+
+    def save(self):
+        user = self.validated_data["user"]
+        new_password = self.validated_data["new_password"]
+
+        user.set_password(new_password)
+        user.save()
+
+        cache_key = f"password_reset_otp_{user.id}"
+        cache.delete(cache_key)
+
         return user

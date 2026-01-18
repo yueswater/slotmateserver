@@ -62,8 +62,9 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.student_id} - {self.first_name} {self.last_name}"
 
+
 class StudentImport(models.Model):
-    csv_file = models.FileField(upload_to='temp_imports/', verbose_name="CSV 檔案")
+    csv_file = models.FileField(upload_to="temp_imports/", verbose_name="CSV 檔案")
     uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name="上傳時間")
     processed = models.BooleanField(default=False, verbose_name="已處理")
     log_message = models.TextField(blank=True, verbose_name="處理紀錄")

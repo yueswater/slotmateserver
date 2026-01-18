@@ -1,6 +1,14 @@
+import datetime
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import update_last_login
+from django.contrib.auth.tokens import default_token_generator
+from django.core.cache import cache
 from django.utils import timezone
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from notify_letter.utils import send_password_reset_email
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -8,11 +16,14 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from utils.network import get_client_ip
+from utils.otp_generator import OTPGenerator
 
 from .serializers import (
     ActivateAccountSerializer,
     ChangePasswordSerializer,
     CheckStudentSerializer,
+    ForgotPasswordSerializer,
+    PasswordResetConfirmSerializer,
     TokenObtainPairSerializer,
 )
 
@@ -127,3 +138,64 @@ class ProfileView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class ForgotPasswordView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = ForgotPasswordSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            student_id = serializer.validated_data["student_id"]
+            user = get_user_model().objects.get(student_id=student_id)
+
+            otp = OTPGenerator(length=6).generate()
+            cache.set(f"password_reset_otp_{user.id}", otp, timeout=600)
+
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+            frontend_url = getattr(
+                settings, "FRONTEND_URL", "https://slotmate.yueswater.com"
+            )
+            reset_link = f"{frontend_url}/reset-password/{uid}/{token}"
+
+            try:
+                send_password_reset_email(
+                    user.email,
+                    {
+                        "user": user,
+                        "otp": otp,
+                        "reset_link": reset_link,
+                        "year": datetime.datetime.now().year,
+                    },
+                )
+            except Exception as e:
+                return Response(
+                    {"error": "Failed to send email."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+            return Response(
+                {"message": "Password reset email sent.", "email": user.email},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+    serializer_class = PasswordResetConfirmSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Password has been reset successfully."},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

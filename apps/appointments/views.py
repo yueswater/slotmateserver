@@ -2,10 +2,14 @@ from datetime import timedelta
 
 from django.db import models, transaction
 from django.utils import timezone
-from notify_letter.utils import send_confirmation_email, send_rejection_email, send_notification_email
+from notify_letter.utils import (
+    send_confirmation_email,
+    send_notification_email,
+    send_rejection_email,
+)
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -239,8 +243,8 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                 },
             }
         )
-    
-    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAdminUser])
     def confirm(self, request, pk=None):
         """
         [Admin Only] 確認預約
@@ -251,7 +255,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         if appointment.status != AppointmentStatus.SCHEDULED:
             return Response(
                 {"error": "只能確認狀態為 '已預約' 的項目"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         appointment.status = AppointmentStatus.CONFIRMED
@@ -259,7 +263,9 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
         print(f"DEBUG: 正在確認預約 ID: {appointment.id}")
         if appointment.user:
-            print(f"DEBUG: 學生: {appointment.user.first_name}, Email: {appointment.user.email}")
+            print(
+                f"DEBUG: 學生: {appointment.user.first_name}, Email: {appointment.user.email}"
+            )
         else:
             print("DEBUG: 找不到學生 User 物件")
 
@@ -271,15 +277,15 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                     "name": appointment.user.first_name,
                     "date": appointment.date,
                     "time_slot": appointment.time_slot,
-                    "status": "CONFIRMED"
-                }
+                    "status": "CONFIRMED",
+                },
             )
         else:
             print("DEBUG: ❌ 學生 Email 為空，跳過寄信")
 
         return Response(AppointmentSerializer(appointment).data)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    @action(detail=True, methods=["post"], permission_classes=[IsAdminUser])
     def reject(self, request, pk=None):
         """
         [Admin Only] 拒絕/駁回預約
@@ -287,17 +293,18 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         Body: { "reason": "老師臨時有事" }
         """
         appointment = self.get_object()
-        reason = request.data.get('reason')
+        reason = request.data.get("reason")
 
         if not reason:
             return Response(
-                {"error": "駁回預約必須提供理由"},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "駁回預約必須提供理由"}, status=status.HTTP_400_BAD_REQUEST
             )
-        if appointment.status not in [AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED]:
-             return Response(
-                {"error": "此狀態無法進行駁回操作"},
-                status=status.HTTP_400_BAD_REQUEST
+        if appointment.status not in [
+            AppointmentStatus.SCHEDULED,
+            AppointmentStatus.CONFIRMED,
+        ]:
+            return Response(
+                {"error": "此狀態無法進行駁回操作"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         user_email = appointment.user.email if appointment.user else None
@@ -322,25 +329,25 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                     "date": appointment.date,
                     "time_slot": appointment.time_slot,
                     "status": "DECLINED",
-                    "reason": reason
-                }
+                    "reason": reason,
+                },
             )
         else:
             print("DEBUG: ❌ 學生 Email 為空，跳過寄信")
 
         return Response(AppointmentSerializer(appointment).data)
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
+    @action(detail=False, methods=["get"], permission_classes=[IsAdminUser])
     def admin_list(self, request):
         """
         [Admin Only] 取得特定格式的後台列表
         支援日期範圍篩選
         URL: GET /api/appointments/admin_list/?start_date=2026-01-01&end_date=2026-01-31
         """
-        start_date = request.query_params.get('start_date')
-        end_date = request.query_params.get('end_date')
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
         queryset = self.get_queryset()
-        
+
         # 日期範圍篩選邏輯
         if start_date and end_date:
             # 搜尋這段時間內的預約
@@ -353,10 +360,10 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             # 如果只給結束日期
             # 搜尋這天之前的
             queryset = queryset.filter(date__lte=end_date)
-            
+
         # 加入排序：日期(新到舊)、時間(早到晚)
-        queryset = queryset.order_by('-date', 'time_slot')
-            
+        queryset = queryset.order_by("-date", "time_slot")
+
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
