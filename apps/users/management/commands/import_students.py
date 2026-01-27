@@ -23,7 +23,9 @@ class Command(BaseCommand):
 
             for row in tqdm(rows, desc="匯入進度"):
                 student_id = row["student_id"].strip()
-                name = row["name"].strip()
+                f_name = row["first_name"].strip()
+                l_name = row["last_name"].strip()
+                dept = row.get("department", "未知系所").strip()
                 email = row.get("email", f"{student_id}@nccu.edu.tw").strip()
 
                 try:
@@ -39,10 +41,12 @@ class Command(BaseCommand):
                     student_id=student_id,
                     email=email,
                     password=student_id,
-                    first_name=name,
+                    first_name=f_name,
+                    last_name=l_name,
+                    department=dept,
                     grade=calculated_grade,
                     is_first_login=True,
-                    is_active=False
+                    is_active=True
                 )
                 count += 1
 
