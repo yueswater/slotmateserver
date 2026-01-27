@@ -346,7 +346,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         """
         start_date = request.query_params.get("start_date")
         end_date = request.query_params.get("end_date")
-        queryset = self.get_queryset()
+        queryset = Appointment.objects.select_related('user').all()
 
         # 日期範圍篩選邏輯
         if start_date and end_date:
@@ -366,6 +366,44 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=["get"], permission_classes=[IsAdminUser], url_path='export-csv')
+    def export_csv(self, request):
+        """
+        [Admin Only] Export appointments to CSV
+        URL: /api/appointments/export_csv/?start_date=...&end_date=...
+        """
+        import csv
+        from django.http import HttpResponse
+
+        start_date = request.query_params.get("start_date")
+        end_date = request.query_params.get("end_date")
+        
+        queryset = Appointment.objects.select_related('user').filter(
+            status__in=[AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED]
+        )
+
+        if start_date and end_date:
+            queryset = queryset.filter(date__range=[start_date, end_date])
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="appointments_{start_date}_to_{end_date}.csv"'
+        response.write(u'\ufeff'.encode('utf8'))
+        
+        writer = csv.writer(response)
+        writer.writerow(['Date', 'Time Slot', 'Student ID', 'Student Name', 'Reason', 'Status'])
+
+        for appt in queryset:
+            writer.writerow([
+                appt.date,
+                appt.time_slot,
+                appt.user.student_id if appt.user else "N/A",
+                appt.user.first_name if appt.user else "N/A",
+                appt.reason or "",
+                appt.status
+            ])
+
+        return response
 
 
 class AvailableSlotsView(APIView):
