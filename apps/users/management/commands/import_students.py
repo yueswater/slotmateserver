@@ -2,6 +2,7 @@ import csv
 import os
 from django.core.management.base import BaseCommand
 from users.models import User
+from tqdm import tqdm
 
 class Command(BaseCommand):
     help = "匯入學生帳號"
@@ -17,10 +18,10 @@ class Command(BaseCommand):
             return
 
         with open(file_path, "r", encoding="utf-8-sig") as csv_file:
-            reader = csv.DictReader(csv_file)
+            rows = list(csv.DictReader(csv_file))
             count = 0
 
-            for row in reader:
+            for row in tqdm(rows, desc="匯入進度"):
                 student_id = row["student_id"].strip()
                 name = row["name"].strip()
                 email = row.get("email", f"{student_id}@nccu.edu.tw").strip()
@@ -32,7 +33,6 @@ class Command(BaseCommand):
                     calculated_grade = 1
 
                 if User.objects.filter(student_id=student_id).exists():
-                    self.stdout.write(self.style.WARNING(f"跳過已存在: {student_id}"))
                     continue
 
                 User.objects.create_user(
