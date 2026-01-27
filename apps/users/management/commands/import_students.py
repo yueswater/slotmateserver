@@ -25,6 +25,12 @@ class Command(BaseCommand):
                 name = row["name"].strip()
                 email = row.get("email", f"{student_id}@nccu.edu.tw").strip()
 
+                try:
+                    student_year_prefix = int(student_id[:3])
+                    calculated_grade = (114 - student_year_prefix) + 1
+                except (ValueError, IndexError):
+                    calculated_grade = 1
+
                 if User.objects.filter(student_id=student_id).exists():
                     self.stdout.write(self.style.WARNING(f"跳過已存在: {student_id}"))
                     continue
@@ -34,6 +40,8 @@ class Command(BaseCommand):
                     email=email,
                     password=student_id,
                     first_name=name,
+                    grade=calculated_grade,
+                    is_first_login=True,
                     is_active=False
                 )
                 count += 1
